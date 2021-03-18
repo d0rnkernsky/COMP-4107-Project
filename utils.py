@@ -8,6 +8,7 @@ def detect_face_rect(in_img, scale_factor=1.3, min_neighbors=3, min_size=(30, 30
     :param in_img: an image
     :return: face region a rectangle as a tuple in the form {x, y, w, h)
     """
+    in_img = in_img.copy()
     gray = cv.cvtColor(in_img, cv.COLOR_RGB2GRAY)
     cascades = cv.CascadeClassifier(
         f'{cv.data.haarcascades}haarcascade_frontalface_default.xml')
@@ -22,7 +23,7 @@ def pixelate(image, face_rect, blocks=5):
     returns picture with a region pixelated
     face_rect = (x, y, w, h)
     '''
-    px_image = image
+    px_image = image.copy()
     # divide the image region into NxN blocks
     x_steps = np.linspace(
         face_rect[0], face_rect[0]+face_rect[2], blocks + 1, dtype="int")
