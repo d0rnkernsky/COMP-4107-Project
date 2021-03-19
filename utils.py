@@ -48,7 +48,7 @@ def pixelate(image, face_rect, blocks=5):
     # return the pixelated blurred px_image
     return px_image
 
-def blur_image(image, face_rect, pad, n):
+def blur_image(image, face_rect, pad=9, n=10):
     """
     returns an image with the face_rect blurred
     """
