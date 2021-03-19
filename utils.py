@@ -47,3 +47,11 @@ def pixelate(image, face_rect, blocks=5):
                          (B, G, R), -1)
     # return the pixelated blurred px_image
     return px_image
+
+def blur_image(image, face_rect, pad, n):
+    """
+    returns an image with the face_rect blurred
+    """
+    blurred_image = image.copy()
+    blurred_image = cv.GaussianBlur(blurred_image[face_rect[0]:face_rect[0]+face_rect[2],face_rect[1]:face_rect[1]+face_rect[3]],(pad,pad), n)
+    return blurred_image
