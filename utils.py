@@ -26,9 +26,9 @@ def pixelate(image, face_rect, blocks=5):
     px_image = image.copy()
     # divide the image region into NxN blocks
     x_steps = np.linspace(
-        face_rect[0], face_rect[0]+face_rect[2], blocks + 1, dtype="int")
+        face_rect[0], face_rect[0] + face_rect[2], blocks + 1, dtype="int")
     y_steps = np.linspace(
-        face_rect[1], face_rect[1]+face_rect[3], blocks + 1, dtype="int")
+        face_rect[1], face_rect[1] + face_rect[3], blocks + 1, dtype="int")
     # loop over the blocks in both the x and y direction
     for i in range(1, len(y_steps)):
         for j in range(1, len(x_steps)):
@@ -52,6 +52,9 @@ def blur_image(image, face_rect, pad=9, n=10):
     """
     returns an image with the face_rect blurred
     """
+    x1, y1, w1, h1 = face_rect
+    orig = image.copy()
     blurred_image = image.copy()
-    blurred_image = cv.GaussianBlur(blurred_image[face_rect[0]:face_rect[0]+face_rect[2],face_rect[1]:face_rect[1]+face_rect[3]],(pad,pad), n)
-    return blurred_image
+    blurred_image = cv.GaussianBlur(blurred_image[x1:x1+w1,y1:y1+h1],(pad,pad), n)
+    orig[x1:x1+w1,y1:y1+h1] = blurred_image
+    return orig
