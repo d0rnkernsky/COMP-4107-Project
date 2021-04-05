@@ -1,5 +1,39 @@
 import cv2 as cv
 import numpy as np
+from enum import Enum
+
+
+class PixelationLevel(Enum):
+    Hard = 10,
+    Medium = 17
+    Light = 25
+
+
+class BlurLevel(Enum):
+    Hard = (9, 10),
+    Medium = (13, 15)
+    Light = (23, 25)
+
+
+def preprocess_and_save(path, blur_level=None, pixel_level=None):
+    assert blur_level is not None
+    assert pixel_level is not None
+
+    assert isinstance(pixel_level, PixelationLevel)
+    assert isinstance(blur_level, BlurLevel)
+
+    assert pixel_level.name == PixelationLevel.name
+
+    img = cv.imread(path)
+    file_name = path[path.index('/') + 1:]
+
+    face_rect = detect_face_rect(img)
+
+    blurred = blur_image(img, face_rect, blur_level)
+    pixelated = pixelate(img, face_rect, pixel_level)
+
+    cv.imwrite(f'./processed/{blur_level}_blur_{file_name}', blurred)
+    cv.imwrite(f'./processed/{pixel_level}_pixel_{file_name}', pixelated)
 
 
 def detect_face_rect(in_img, scale_factor=1.3, min_neighbors=3, min_size=(30, 30)):
@@ -18,17 +52,20 @@ def detect_face_rect(in_img, scale_factor=1.3, min_neighbors=3, min_size=(30, 30
     return faces[0]
 
 
-def pixelate(image, face_rect, blocks=5):
+def pixelate(image, face_rect, level):
     '''
     returns picture with a region pixelated
     face_rect = (x, y, w, h)
     '''
+    assert isinstance(level, PixelationLevel)
+    level = level.value[0]
+
     px_image = image.copy()
     # divide the image region into NxN blocks
     x_steps = np.linspace(
-        face_rect[0], face_rect[0] + face_rect[2], blocks + 1, dtype="int")
+        face_rect[0], face_rect[0] + face_rect[2], level + 1, dtype="int")
     y_steps = np.linspace(
-        face_rect[1], face_rect[1] + face_rect[3], blocks + 1, dtype="int")
+        face_rect[1], face_rect[1] + face_rect[3], level + 1, dtype="int")
     # loop over the blocks in both the x and y direction
     for i in range(1, len(y_steps)):
         for j in range(1, len(x_steps)):
@@ -49,10 +86,13 @@ def pixelate(image, face_rect, blocks=5):
     return px_image
 
 
-def blur_image(image, face_rect, pad=9, n=10):
+def blur_image(image, face_rect, level):
     """
     returns an image with the face_rect blurred
     """
+    assert isinstance(level, BlurLevel)
+
+    pad, n = level.value[0]
     x1, y1, w1, h1 = face_rect
     orig = image.copy()
     blurred_image = image.copy()
