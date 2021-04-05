@@ -96,6 +96,64 @@ def blur_image(image, face_rect, level):
     x1, y1, w1, h1 = face_rect
     orig = image.copy()
     blurred_image = image.copy()
-    blurred_image = cv.GaussianBlur(blurred_image[x1:x1 + w1, y1:y1 + h1], (pad, pad), n)
+    blurred_image = cv.GaussianBlur(
+        blurred_image[x1:x1 + w1, y1:y1 + h1], (pad, pad), n)
     orig[x1:x1 + w1, y1:y1 + h1] = blurred_image
     return orig
+
+
+def get_face_sizes(location):
+    '''
+    location of dataset folder "C:\\Users\\User\\Desktop\\dataset"
+    creates 2 files
+    face_sizes.txt
+        holds the name of the image along with its weight and height
+    sizes.txt
+        simply holds the size of images that didn't throw an exception
+    '''
+
+    os.chdir(location)
+    paths = os.listdir()
+    sizes = []
+    data = []
+
+    for path in paths:
+        try:
+            img = cv.imread(path)
+            face_rect = ut.detect_face_rect(img)
+            x, y, w, h = face_rect
+            if w != h:
+                print(path, "non-square face")
+            data.append((path, w, h))
+            sizes.append(w)
+        except:
+            data.append((path, "error"))
+
+    f = open(os.path.join(location, "face_sizes.txt"), "w")
+    for item in data:
+        if len(item) == 3:
+            f.write(str(item[0]) + " " + str(item[1]) +
+                    " " + str(item[2]) + "\n")
+        else:
+            f.write(str(item[0]) + " " + str(item[1]) + "\n")
+    f.close()
+
+    f = open(os.path.join(location, "sizes.txt"), "w")
+    for item in sizes:
+        f.write(str(item) + "\n")
+    f.close()
+
+
+def get_face_size_stats(location):
+    '''
+    location of dataset folder "C:\\Users\\User\\Desktop\\dataset\\sizes.txt"
+    takes sizes.txt file and runs stats on it
+    '''
+    sizes = np.loadtxt(location, dtype=np.int16)
+    print(len(sizes))
+    fig, ax = plt.subplots(1, 1)
+    ax.hist(sizes)
+    ax.set_title("face sizes")
+    ax.set_xlabel("size of face")
+    ax.set_ylabel("number of faces")
+    plt.show()
