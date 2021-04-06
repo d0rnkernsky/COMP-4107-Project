@@ -1,39 +1,190 @@
 import cv2 as cv
 import numpy as np
 from enum import Enum
+import os
 
 
 class PixelationLevel(Enum):
-    Hard = 10,
+    Hard = 10
     Medium = 17
     Light = 25
 
 
 class BlurLevel(Enum):
-    Hard = (9, 10),
+    Hard = (23, 25)
     Medium = (13, 15)
-    Light = (23, 25)
+    Light = (9, 10)
 
 
-def preprocess_and_save(path, blur_level=None, pixel_level=None):
+def crop_face(img, face_rect, size):
+    '''
+    face_rect = (x, y, w, h)
+    size = int
+    size represents the height and width of the cropped photo
+    will be centered around face_rect
+
+    could possibly run into an error if the face is close to an edge and a size is choosen that goes past the edge
+    '''
+    x, y, w, h = face_rect
+    # print("face_rect")
+    # print("x:", x)
+    # print("y:", y)
+    # print("w:", w)
+    # print("h:", h)
+    # print("x to x+w:", x, x+w)
+    # print("y to y+h:", y, w+h)
+    center_x = (x + x + w) // 2
+    center_y = (y + y + h) // 2
+    x = center_x - (size//2)
+    y = center_y - (size//2)
+    # print("cropped")
+    # print("x:", x)
+    # print("y:", y)
+    # print("w:", size)
+    # print("h:", size)
+    # print("x to x+size:", x, x+size)
+    # print("y to y+size:", y, w+size)
+    img = img.copy()
+    crop = img[y:y+size, x:x+size]
+    return crop
+
+
+def create_folders(location):
+    # print(location)
+    folder = os.path.abspath(os.path.join(location, ".."))
+    # print(folder)
+    if os.path.exists(folder) == False:
+        os.makedirs(folder)
+
+
+def preprocess_and_save(file_name, blur_level=None, pixel_level=None, size=None):
+    '''
+    if size is specificed then crop around face of that size
+    if no size is specificed don't crop and simpliy obfurcate sub-section
+
+    must run via cmd prompt or terminal (not in jupyter)
+
+    creates necessary folders
+    won't save images unless folders exist
+    '''
     assert blur_level is not None
     assert pixel_level is not None
 
     assert isinstance(pixel_level, PixelationLevel)
     assert isinstance(blur_level, BlurLevel)
 
-    assert pixel_level.name == PixelationLevel.name
+    # assert pixel_level.name == PixelationLevel.name
 
-    img = cv.imread(path)
-    file_name = path[path.index('/') + 1:]
+    img = cv.imread(file_name)
+    # print("\nfile_name", file_name)
 
     face_rect = detect_face_rect(img)
 
-    blurred = blur_image(img, face_rect, blur_level)
-    pixelated = pixelate(img, face_rect, pixel_level)
+    if type(size) == int:
+        # crop photo and center acround face
+        crop_img = crop_face(img, face_rect, size)
 
-    cv.imwrite(f'./processed/{blur_level}_blur_{file_name}', blurred)
-    cv.imwrite(f'./processed/{pixel_level}_pixel_{file_name}', pixelated)
+        # print("crop_img", type(crop_img))
+        # print("crop_img", crop_img.shape)
+        # print("crop_img", crop_img.dtype)
+        # cv.imshow("crop_img", crop_img)
+        # cv.waitKey(0)
+        # cv.destroyAllWindows()
+
+        # obfurcate entire image
+        blurred = blur_image(crop_img, (0, 0, size, size), blur_level)
+        pixelated = pixelate(crop_img, (0, 0, size, size), pixel_level)
+
+        # different save location folder for cropped images
+        save_folder = os.path.abspath(
+            os.path.join(os.getcwd(), "..", "processed", str(size)))
+
+    else:
+        # print("img", type(img))
+        # print("img", img.shape)
+        # print("img", img.dtype)
+        # cv.imshow("img", img)
+        # cv.waitKey(0)
+        # cv.destroyAllWindows()
+
+        # obfurcate subsection of image
+        blurred = blur_image(img, face_rect, blur_level)
+        pixelated = pixelate(img, face_rect, pixel_level)
+
+        # different save location folder for full sized images
+        save_folder = os.path.abspath(
+            os.path.join(os.getcwd(), "..", "processed", "250"))
+
+    # print("blurred", type(blurred))
+    # print("blurred", blurred.shape)
+    # print("blurred", blurred.dtype)
+    # cv.imshow("blurred", blurred)
+    # cv.waitKey(0)
+    # cv.destroyAllWindows()
+
+    # print("pixelated", type(pixelated))
+    # print("pixelated", pixelated.shape)
+    # print("pixelated", pixelated.dtype)
+    # cv.imshow("pixelated", pixelated)
+    # cv.waitKey(0)
+    # cv.destroyAllWindows()
+
+    # print("save path", save_folder)
+    blurred_location = os.path.join(
+        save_folder, f"{blur_level.name}_blur", file_name)
+
+    pixelated_location = os.path.join(
+        save_folder, f"{pixel_level.name}_pixelate", file_name)
+
+    # create folders for saving files
+    create_folders(blurred_location)
+    create_folders(pixelated_location)
+
+    # save as JPG
+    # print(blurred_location)
+    # print(pixelated_location)
+    cv.imwrite(
+        blurred_location, blurred, [cv.IMWRITE_JPEG_QUALITY, 100])
+    cv.imwrite(pixelated_location, pixelated,
+               [cv.IMWRITE_JPEG_QUALITY, 100])
+
+
+def dataset_prep(dataset_location, levels, size=None):
+    '''
+    dataset_location = path to dataset folder
+    levels = 000
+    each int being a switch for a level of obfuscation
+    000 no levels
+    100 light
+    110 light, medium
+    111 all levels
+    size = int
+    which will represnt the size of the cropped image
+
+    saves new pictures in a processed folder on the same level as dataset
+
+    must run via cmd prompt or terminal (not in jupyter)
+    '''
+    os.chdir(dataset_location)
+    paths = os.listdir()
+
+    if str(levels)[0] == "1":
+        for path in paths:
+            # print("path", path)
+            preprocess_and_save(path,
+                                BlurLevel.Light, PixelationLevel.Light, size)
+
+    if str(levels)[1] == "1":
+        for path in paths:
+            # print("path", path)
+            preprocess_and_save(path,
+                                BlurLevel.Medium, PixelationLevel.Medium, size)
+
+    if str(levels)[2] == "1":
+        for path in paths:
+            # print("path", path)
+            preprocess_and_save(path,
+                                BlurLevel.Hard, PixelationLevel.Hard, size)
 
 
 def detect_face_rect(in_img, scale_factor=1.3, min_neighbors=3, min_size=(30, 30)):
@@ -58,7 +209,7 @@ def pixelate(image, face_rect, level):
     face_rect = (x, y, w, h)
     '''
     assert isinstance(level, PixelationLevel)
-    level = level.value[0]
+    level = level.value
 
     px_image = image.copy()
     # divide the image region into NxN blocks
@@ -92,7 +243,7 @@ def blur_image(image, face_rect, level):
     """
     assert isinstance(level, BlurLevel)
 
-    pad, n = level.value[0]
+    pad, n = level.value
     x1, y1, w1, h1 = face_rect
     orig = image.copy()
     blurred_image = image.copy()
@@ -150,7 +301,7 @@ def get_face_size_stats(location):
     takes sizes.txt file and runs stats on it
     '''
     sizes = np.loadtxt(location, dtype=np.int16)
-    print(len(sizes))
+    # print(len(sizes))
     fig, ax = plt.subplots(1, 1)
     ax.hist(sizes)
     ax.set_title("face sizes")
