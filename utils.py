@@ -69,7 +69,13 @@ def resize_and_save(file_name, size):
     img = cv.imread(file_name)
     # print("\nfile_name", file_name)
 
-    face_rect = detect_face_rect(img)
+    face_rect = None
+
+    try:
+        face_rect = detect_face_rect(img)
+    except:
+        print("detect_face_rect error on file:", file_name)
+        return
 
     # crop photo and center acround face
     crop_img = crop_face(img, face_rect, size)
@@ -112,7 +118,13 @@ def preprocess_and_save(file_name, blur_level=None, pixel_level=None, size=None)
     img = cv.imread(file_name)
     # print("\nfile_name", file_name)
 
-    face_rect = detect_face_rect(img)
+    face_rect = None
+
+    try:
+        face_rect = detect_face_rect(img)
+    except:
+        print("detect_face_rect error on file:", file_name)
+        return
 
     if type(size) == int:
         # crop photo and center acround face
@@ -318,7 +330,7 @@ def get_face_sizes(location):
     for path in paths:
         try:
             img = cv.imread(path)
-            face_rect = ut.detect_face_rect(img)
+            face_rect = detect_face_rect(img)
             x, y, w, h = face_rect
             if w != h:
                 print(path, "non-square face")
