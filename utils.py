@@ -22,8 +22,6 @@ def crop_face(img, face_rect, size):
     size = int
     size represents the height and width of the cropped photo
     will be centered around face_rect
-
-    could possibly run into an error if the face is close to an edge and a size is choosen that goes past the edge
     '''
     x, y, w, h = face_rect
     # print("face_rect")
@@ -37,6 +35,16 @@ def crop_face(img, face_rect, size):
     center_y = (y + y + h) // 2
     x = center_x - (size//2)
     y = center_y - (size//2)
+    if x < 0:
+        x = 0
+    if y < 0:
+        y = 0
+    if x+size > 250:
+        diff = x+size - 250
+        x = x - diff
+    if y+size > 250:
+        diff = y+size - 250
+        y = y - diff
     # print("cropped")
     # print("x:", x)
     # print("y:", y)
@@ -77,8 +85,17 @@ def resize_and_save(file_name, size):
         print("detect_face_rect error on file:", file_name)
         return
 
+    # print("Face_rect:", face_rect)
+
     # crop photo and center acround face
     crop_img = crop_face(img, face_rect, size)
+
+    # print("crop_img", type(crop_img))
+    # print("crop_img", crop_img.shape)
+    # print("crop_img", crop_img.dtype)
+    # cv.imshow("crop_img", crop_img)
+    # cv.waitKey(0)
+    # cv.destroyAllWindows()
 
     # different save location folder for cropped images
     save_folder = os.path.abspath(
@@ -93,8 +110,7 @@ def resize_and_save(file_name, size):
     create_folders(cropped_location)
 
     # save as JPG
-    cv.imwrite(cropped_location, crop_img,
-               [cv.IMWRITE_JPEG_QUALITY, 100])
+    cv.imwrite(cropped_location, crop_img, [cv.IMWRITE_JPEG_QUALITY, 100])
 
 
 def preprocess_and_save(file_name, blur_level=None, pixel_level=None, size=None):
