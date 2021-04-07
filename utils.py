@@ -57,6 +57,40 @@ def create_folders(location):
         os.makedirs(folder)
 
 
+def resize_and_save(file_name, size):
+    '''
+    save cropped images into a new folder inside of dataset
+
+    must run via cmd prompt or terminal (not in jupyter)
+
+    creates necessary folders
+    won't save images unless folders exist
+    '''
+    img = cv.imread(file_name)
+    # print("\nfile_name", file_name)
+
+    face_rect = detect_face_rect(img)
+
+    # crop photo and center acround face
+    crop_img = crop_face(img, face_rect, size)
+
+    # different save location folder for cropped images
+    save_folder = os.path.abspath(
+        os.path.join(os.getcwd(), str(size)))
+    # print("save path", save_folder)
+
+    cropped_location = os.path.join(
+        save_folder, file_name)
+    # print("cropped_location:", cropped_location)
+
+    # create folders for saving files
+    create_folders(cropped_location)
+
+    # save as JPG
+    cv.imwrite(cropped_location, crop_img,
+               [cv.IMWRITE_JPEG_QUALITY, 100])
+
+
 def preprocess_and_save(file_name, blur_level=None, pixel_level=None, size=None):
     '''
     if size is specificed then crop around face of that size
@@ -166,21 +200,34 @@ def dataset_prep(dataset_location, levels, size=None):
     must run via cmd prompt or terminal (not in jupyter)
     '''
     os.chdir(dataset_location)
-    paths = os.listdir()
+    # paths = os.listdir()
+    # create a dir list of files exclusively
+    # having folders in list will cause errors
+    # paths = os.listdir()
+    paths = [f for f in os.listdir() if os.path.isfile(f)]
+
+    if size != None:
+        # create a new folder of cropped unobfuscated images
+        for path in paths:
+            # print("path", path)
+            resize_and_save(path, size)
 
     if str(levels)[0] == "1":
+        # create and save light obfuscated images
         for path in paths:
             # print("path", path)
             preprocess_and_save(path,
                                 BlurLevel.Light, PixelationLevel.Light, size)
 
     if str(levels)[1] == "1":
+        # create and save medium obfuscated images
         for path in paths:
             # print("path", path)
             preprocess_and_save(path,
                                 BlurLevel.Medium, PixelationLevel.Medium, size)
 
     if str(levels)[2] == "1":
+        # create and save hard obfuscated images
         for path in paths:
             # print("path", path)
             preprocess_and_save(path,
