@@ -5,8 +5,6 @@ import matplotlib.pyplot as plt
 import os
 
 location = os.path.join(os.getcwd(), "dataset")
-os.chdir(location)
-# print("dataset location", location)
 
 # creates dataset of full sized images with sub-section obfurcated
 ut.dataset_prep(location, 111)
