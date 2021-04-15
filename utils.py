@@ -158,8 +158,7 @@ def preprocess_and_save(file_name, blur_level=None, pixel_level=None, size=None)
         pixelated = pixelate(crop_img, (0, 0, size, size), pixel_level)
 
         # different save location folder for cropped images
-        save_folder = os.path.abspath(
-            os.path.join(os.getcwd(), "..", "processed", str(size)))
+        save_folder = os.path.abspath(os.path.join(os.getcwd(), "..", "processed", str(size)))
 
     else:
         # print("img", type(img))
@@ -262,7 +261,7 @@ def dataset_prep(dataset_location, levels, size=None):
                                 BlurLevel.Hard, PixelationLevel.Hard, size)
 
 
-def detect_face_rect(in_img, scale_factor=1.3, min_neighbors=3, min_size=(30, 30)):
+def detect_face_rect(in_img, scale_factor=1.1, min_neighbors=3, min_size=(30, 30)):
     """
         Detects a face (only one) on an image from Faces in the Wild dataset
     :param in_img: an image
